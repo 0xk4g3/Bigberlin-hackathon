@@ -1,6 +1,6 @@
 # Inbound Telephony Voice Agent
 
-A reference implementation for building a secure inbound telephony voice agent using [Deepgram's Voice Agent API](https://developers.deepgram.com/docs/voice-agent-api) and [Twilio](https://www.twilio.com/). Uses [Deepgram Flux](https://developers.deepgram.com/docs/models-overview) for speech-to-text with native turn-taking optimized for real-time voice agent conversations. Includes webhook endpoint protection and Twilio request signature validation out of the box.
+A reference implementation for building a secure inbound telephony voice agent using [Deepgram's Voice Agent API](https://developers.deepgram.com/docs/voice-agent) and [Twilio](https://www.twilio.com/). Uses [Deepgram Flux](https://developers.deepgram.com/docs/models-overview) for speech-to-text with native turn-taking optimized for real-time voice agent conversations. Includes webhook endpoint protection and Twilio request signature validation out of the box.
 
 Callers dial a phone number and talk to an AI receptionist that can check appointment availability, book appointments, look up existing appointments, and cancel appointments, all through natural voice conversation.
 
