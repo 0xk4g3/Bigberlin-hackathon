@@ -4,4 +4,3 @@ deepgram-sdk==6.0.0
 twilio==9.10.2
 python-dotenv==1.2.1
 python-multipart==0.0.22
-structlog==25.5.0

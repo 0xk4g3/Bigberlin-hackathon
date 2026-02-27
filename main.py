@@ -4,8 +4,6 @@ Telephony Voice Agent - Entry Point
 Starts a Starlette web server that handles:
   - POST /incoming-call  → Twilio webhook (returns TwiML)
   - WS   /twilio         → Twilio audio stream (or dev_client.py)
-  - GET  /               → Web dashboard (Phase 4)
-  - WS   /ws/events      → Browser event stream (Phase 4)
 
 Usage:
   python main.py
@@ -35,13 +33,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Placeholder routes (will be replaced in Phase 4: Web UI)
-# ---------------------------------------------------------------------------
 async def dashboard(request):
     return PlainTextResponse(
-        "Telephony Voice Agent - Dashboard coming in Phase 4.\n"
-        "Run `python dev_client.py` to start a conversation."
+        "Telephony Voice Agent is running.\n"
+        "Call your Twilio number or use `python dev_client.py` to test locally."
     )
 
 

@@ -89,8 +89,8 @@ Note: Twilio trial accounts play a short disclaimer before connecting callers.
 ### 1. Clone and Install
 
 ```bash
-git clone <repo-url>
-cd telephony-voice-agent
+git clone https://github.com/deepgram-devs/deepgram-voice-agent-inbound-telephony.git
+cd deepgram-voice-agent-inbound-telephony
 
 python -m venv venv
 source venv/bin/activate
@@ -167,10 +167,10 @@ If you prefer to run the server locally instead of deploying to Fly.io, you can 
 
 ```bash
 # ngrok
-ngrok http 8000
+ngrok http 8080
 
 # or zrok
-zrok share public localhost:8000
+zrok share public localhost:8080
 ```
 
 Copy the public URL (e.g., `https://xxxx.ngrok.io`).
@@ -239,7 +239,7 @@ Agent: "I'd be happy to help you schedule a cleaning. Do you have a preferred
 
 Caller: "How about next Tuesday?"
 
-  [Agent calls check_available_slots(date="2025-01-07")]
+  [Agent calls check_available_slots(date="2026-03-03")]
 
 Agent: "I have a few openings next Tuesday with Lisa Thompson, our hygienist.
         There's a slot at 10 AM and another at 2 PM. Which would work better
@@ -247,12 +247,12 @@ Agent: "I have a few openings next Tuesday with Lisa Thompson, our hygienist.
 
 Caller: "10 AM works."
 
-Agent: "Great, a cleaning with Lisa Thompson on Tuesday January 7th at 10 AM.
+Agent: "Great, a cleaning with Lisa Thompson on Tuesday March 3rd at 10 AM.
         Can I get your name and phone number to book that?"
 
 Caller: "Sure, it's Maria Garcia, 555-0199."
 
-Agent: "I have a cleaning with Lisa Thompson on Tuesday January 7th at 10 AM
+Agent: "I have a cleaning with Lisa Thompson on Tuesday March 3rd at 10 AM
         for Maria Garcia. Shall I go ahead and book that?"
 
 Caller: "Yes please."
@@ -261,7 +261,7 @@ Caller: "Yes please."
                                 patient_phone="555-0199",
                                 slot_id="slot-abc123")]
 
-Agent: "You're all set! Your cleaning is booked for Tuesday January 7th at
+Agent: "You're all set! Your cleaning is booked for Tuesday March 3rd at
         10 AM with Lisa Thompson. Is there anything else I can help with?"
 
 Caller: "No, that's all. Thanks!"

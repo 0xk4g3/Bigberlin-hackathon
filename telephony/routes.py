@@ -87,7 +87,7 @@ async def incoming_call(request: Request) -> Response:
         # Strip protocol prefix - TwiML needs a bare hostname for wss://
         host = SERVER_EXTERNAL_URL.replace("https://", "").replace("http://", "").rstrip("/")
     else:
-        host = request.headers.get("host", "localhost:8000")
+        host = request.headers.get("host", "localhost:8080")
 
     # Build the WebSocket URL - include the webhook secret token if configured
     ws_path = "/twilio"

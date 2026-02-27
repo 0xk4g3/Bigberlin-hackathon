@@ -43,7 +43,7 @@ Without explicit instructions, LLMs default to chat-style formatting. The voice 
 ### Numbers and Identifiers
 
 ```
-Bad:  "Your appointment is on 1/7/2025"
+Bad:  "Your appointment is on 3/3/2026"
 Good: "Your appointment is on January seventh"
 
 Bad:  "That'll be $150.00"

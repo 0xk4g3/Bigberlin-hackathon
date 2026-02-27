@@ -76,7 +76,7 @@ python dev_client.py
 ```
 
 The dev client will:
-1. Connect to `ws://localhost:8000/twilio`
+1. Connect to `ws://localhost:8080/twilio`
 2. Send a synthetic Twilio "start" event
 3. Open your microphone
 4. Display a terminal UI with call status, transcript, and function calls
@@ -86,7 +86,7 @@ Speak into your microphone to have a conversation with the agent.
 ### Dev Client Options
 
 ```bash
-python dev_client.py --url ws://localhost:8000/twilio  # Default URL
+python dev_client.py --url ws://localhost:8080/twilio  # Default URL
 ```
 
 ### Ending a Call
@@ -132,7 +132,7 @@ python setup.py              # Configures Twilio + deploys to Fly.io
 python setup.py --twilio-only  # Configures Twilio, bring your own URL
 ```
 
-Or see the main [README](../README.md#telephony-setup-real-phone-calls) for manual Twilio setup instructions.
+Or see the main [README](../README.md#alternative-tunnel--twilio) for manual Twilio setup instructions.
 
 ## Troubleshooting
 

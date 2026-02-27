@@ -163,7 +163,7 @@ return {
     "available_slots": [
         {
             "slot_id": "slot-abc123",
-            "description": "Cleaning with Lisa Thompson on 2025-01-07 at 10:00 AM"
+            "description": "Cleaning with Lisa Thompson on 2026-03-03 at 10:00 AM"
         }
     ],
     "total_available": 3,
@@ -197,7 +197,7 @@ Keep it to 2-5 functions per agent. More functions mean:
 - Higher chance of the LLM calling the wrong function
 - Longer configuration messages sent to Deepgram
 
-If you need more than 5 functions, consider whether some can be combined or whether you need a multi-agent architecture (see the [multi-agent reference implementation](https://github.com/deepgram/deepgram-voice-agent-multi-agent)).
+If you need more than 5 functions, consider whether some can be combined or whether you need a multi-agent architecture.
 
 ## Example: Complete Function Set
 

@@ -15,8 +15,6 @@ The session also handles:
   - Transcript logging
   - Lifecycle management (connect, run, cleanup)
 
-This is a simplified version of the multi-agent reference's CallOrchestrator.
-No agent transitions, no summarization - just one agent per call.
 """
 import asyncio
 import base64
@@ -81,9 +79,9 @@ class VoiceAgentSession:
         self._connection = await self._context_manager.__aenter__()
 
         # Start our own receive loop instead of connection.start_listening().
-        # The SDK's start_listening() crashes on unknown message types (e.g.
-        # "History") because its parse_obj_as() raises a ValidationError that
-        # exits the entire loop.  Our loop catches those per-message and continues.
+        # The SDK's start_listening() may raise an exception if it encounters
+        # an unknown message type.
+        # Our loop catches those per-message and continues.
         self._listen_task = asyncio.create_task(self._listen_loop())
 
         # Send agent configuration (prompt, functions, audio settings).
@@ -267,7 +265,7 @@ class VoiceAgentSession:
         await self._connection.send_function_call_response(response)
 
         # If this was end_call, wait for the agent's goodbye audio to play
-        # then hang up.  Matches the multi-agent reference's approach.
+        # then hang up.
         if function_name == "end_call":
             asyncio.create_task(self._end_call_after_delay())
 

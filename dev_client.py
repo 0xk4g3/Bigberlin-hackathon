@@ -19,7 +19,7 @@ Prerequisites:
   - You need a microphone and speakers/headphones
 
 Options:
-  --url WS_URL    WebSocket URL (default: ws://localhost:8000/twilio)
+  --url WS_URL    WebSocket URL (default: ws://localhost:8080/twilio)
 """
 import argparse
 import asyncio
@@ -31,6 +31,13 @@ import time
 import uuid
 
 # These are dev-only dependencies - not in requirements.txt
+try:
+    import numpy as np
+except ImportError:
+    print("ERROR: numpy is required for dev_client.py")
+    print("Install it with: pip install numpy")
+    sys.exit(1)
+
 try:
     import sounddevice as sd
 except ImportError:
@@ -276,8 +283,6 @@ async def _receive_agent_audio(ws, ui: TerminalUI):
                 if payload:
                     mulaw_bytes = base64.b64decode(payload)
                     pcm_bytes = mulaw_to_pcm16(mulaw_bytes)
-                    # Convert bytes to numpy-compatible array
-                    import numpy as np
                     pcm_array = np.frombuffer(pcm_bytes, dtype="int16")
                     output_stream.write(pcm_array)
 
@@ -285,10 +290,6 @@ async def _receive_agent_audio(ws, ui: TerminalUI):
                 # Server wants us to stop playing - discard buffered audio immediately
                 output_stream.abort()
                 output_stream.start()
-
-            # Also watch for transcript/function events if the server sends them
-            # (these would come via a separate events channel in Phase 4,
-            #  but for now we parse what Deepgram sends through the session)
 
     except websockets.exceptions.ConnectionClosed:
         pass
@@ -306,8 +307,8 @@ def main():
     )
     parser.add_argument(
         "--url",
-        default="ws://localhost:8000/twilio",
-        help="WebSocket URL to connect to (default: ws://localhost:8000/twilio)",
+        default="ws://localhost:8080/twilio",
+        help="WebSocket URL to connect to (default: ws://localhost:8080/twilio)",
     )
     args = parser.parse_args()
 

@@ -23,7 +23,7 @@ DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
 # Server
 # ---------------------------------------------------------------------------
 SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
-SERVER_PORT = int(os.getenv("SERVER_PORT", "8000"))
+SERVER_PORT = int(os.getenv("SERVER_PORT", "8080"))
 
 # Optional - tunnel or production URL (e.g. https://xxxx.ngrok.io).
 # Set automatically by setup.py, or manually for tunnel-based workflows.

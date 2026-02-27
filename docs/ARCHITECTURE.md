@@ -14,7 +14,7 @@ The system connects a phone call to an AI voice agent. Three services work toget
 ┌──────────┐     ┌─────────────────────┐     ┌──────────────────────┐
 │          │     │  Application Server │     │  Deepgram Voice      │
 │  Caller  │────►│      (Starlette)    │────►│  Agent API           │
-│  (Phone) │◄────│                     │◄────│  (STT → LLM → TTS)  │
+│  (Phone) │◄────│                     │◄────│  (STT → LLM → TTS)   │
 │          │     │                     │     │                      │
 └──────────┘     └──────────┬──────────┘     └──────────────────────┘
    via Twilio               │
