@@ -46,7 +46,7 @@ ps:
 	docker compose ps
 
 health:
-	curl -s http://localhost:8000/health | python3 -m json.tool
+	docker compose exec claimcall curl -s http://localhost:8000/health | python3 -m json.tool
 
 # ── Shell access ──────────────────────────────────────────────────────────────
 

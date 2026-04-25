@@ -12,4 +12,4 @@ pydantic-settings==2.3.4
 aiofiles==23.2.1
 python-multipart==0.0.9
 # AI-Coustics SDK — optional, graceful fallback if unavailable
-# aic-sdk
+aic-sdk
