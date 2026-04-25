@@ -187,14 +187,18 @@ def apply_telephone_bandpass(
 
 def elevenlabs_audio_to_twilio_payload(
     el_audio_b64: str,
-    el_sample_rate: int = EL_SAMPLE_RATE,   # EL sends 16kHz by default
+    el_is_mulaw: bool = False,          # True when EL output format = μ-law 8000 Hz
+    el_sample_rate: int = EL_SAMPLE_RATE,
     apply_filter: bool = True,
     filter_order: int = 4,
 ) -> str:
     """
-    ElevenLabs→Twilio full pipeline:
-    base64(PCM16 @ el_sample_rate) → [bandpass] → downsample to 8kHz → mulaw → base64
+    ElevenLabs→Twilio full pipeline.
+    When el_is_mulaw=True (EL output set to μ-law 8000 Hz): zero-copy passthrough.
+    Otherwise: base64(PCM16 @ el_sample_rate) → [bandpass] → downsample to 8kHz → mulaw → base64.
     """
+    if el_is_mulaw:
+        return el_audio_b64  # already base64(mulaw 8kHz) — identical to Twilio format
     pcm16 = base64.b64decode(el_audio_b64)
     if apply_filter:
         pcm16 = apply_telephone_bandpass(pcm16, sample_rate=el_sample_rate, order=filter_order)
