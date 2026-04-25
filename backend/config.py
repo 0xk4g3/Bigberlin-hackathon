@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # AI-Coustics — .env uses AICOUSTICS_API_KEY; aic-sdk expects AIC_SDK_LICENSE
     aicoustics_api_key: str = ""
     aicoustics_enabled: bool = True
+    el_is_mulaw: bool = False
 
     @property
     def aic_sdk_license(self) -> str:
