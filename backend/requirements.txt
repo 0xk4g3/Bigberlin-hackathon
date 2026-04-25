@@ -11,6 +11,5 @@ pydantic==2.7.4
 pydantic-settings==2.3.4
 aiofiles==23.2.1
 python-multipart==0.0.9
-# AI-Coustics SDK: pip install aic-sdk
-# (not pinned here — check https://docs.ai-coustics.com for latest version)
-aic-sdk
+# AI-Coustics SDK — optional, graceful fallback if unavailable
+# aic-sdk
