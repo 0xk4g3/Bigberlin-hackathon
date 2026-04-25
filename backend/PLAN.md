@@ -44,7 +44,7 @@ Status key: `[ ]` todo | `[x]` done | `[~]` in progress
 - [x] 6.3 create_claim, update_claim_status, approve_claim
 - [x] 6.4 get_calls, get_call, get_claims, get_claim, check_prior_claims, get_live_stats
 - [x] 6.5 ping()
-- [ ] 6.6 TEST: insert → query → assert → delete (BLOCKED — schema.sql not yet run in Supabase)
+- [x] 6.6 TEST: 17/17 integration tests passed ✅
 
 ## Step 7 — services/elevenlabs.py ✅
 ## Step 8 — services/twilio_client.py ✅
@@ -64,41 +64,59 @@ Status key: `[ ]` todo | `[x]` done | `[~]` in progress
 ## Step 19 — README.md
 - [ ] 19.1 Hetzner deploy + Twilio/EL config + schema setup + E2E test
 
-## Step 20 — Full E2E Test (BLOCKED until schema.sql is run)
-- [ ] 20.1 Inbound call → calls row exists
-- [ ] 20.2 Transcript webhook → transcripts rows exist
-- [ ] 20.3 Post-call webhook → claims row with FNOL data
-- [ ] 20.4 Approve → status=processing, SMS sent
+## Step 20 — Full E2E Test (BLOCKED — app not deployed to Hetzner yet)
+
+### What's done ✅
+- Schema applied in Supabase (17/17 integration tests pass)
+- All 95 unit tests pass
+- Twilio webhook configured → +493042431626 → https://claimcall.eliteprojects.uk/incoming-call
+- Hetzner server online (default nginx responding at claimcall.eliteprojects.uk)
+
+### What's blocking ❌
+Hetzner still serves default nginx page — our Docker Compose stack not deployed yet.
+
+### Deploy steps (run on Hetzner via SSH)
+```bash
+# 1. SSH into Hetzner
+ssh root@<HETZNER_IP>
+
+# 2. Install Docker + Docker Compose
+apt update && apt install -y docker.io docker-compose-plugin
+systemctl enable --now docker
+
+# 3. Clone repo
+git clone https://github.com/0xk4g3/Bigberlin-hackathon.git /app/claimcall
+cd /app/claimcall/backend
+
+# 4. Copy .env (or create it with the same values as local)
+nano .env   # paste contents
+
+# 5. Get SSL cert (before starting nginx)
+apt install -y certbot
+certbot certonly --standalone -d claimcall.eliteprojects.uk
+# → certs at /etc/letsencrypt/live/claimcall.eliteprojects.uk/
+
+# 6. Start stack
+docker compose up -d --build
+
+# 7. Verify
+curl -s https://claimcall.eliteprojects.uk/health
+# Expected: {"status": "ok", "supabase": true, ...}
+```
+
+### E2E checklist (once deployed)
+- [ ] 20.1 `curl https://claimcall.eliteprojects.uk/health` → `{"status":"ok","supabase":true}`
+- [ ] 20.2 Call +493042431626 → Sophie answers → call row appears in Supabase `calls` table
+- [ ] 20.3 Hang up → ElevenLabs fires webhook → `claims` row created with FNOL data
+- [ ] 20.4 `POST /api/claims/{id}/approve` → status=processing, caller receives SMS
 
 ---
 
-## ⚠️ Action Required
-
-1. **Run schema.sql in Supabase:**
-   - Supabase Dashboard → SQL Editor
-   - Paste contents of `sql/schema.sql`
-   - Click Run
-
-2. **Verify SUPABASE_SERVICE_KEY** is the `service_role` key (not anon)
-   - Supabase Dashboard → Project Settings → API → `service_role` key
-
-3. **Rotate ELEVENLABS_WEBHOOK_SECRET** before production
-
-After schema is applied, run:
-```bash
-.venv/bin/python -c "
-import asyncio
-from config import get_settings
-from services.supabase_client import SupabaseService
-
-async def test():
-    svc = await SupabaseService.create(get_settings())
-    assert await svc.ping(), 'ping failed'
-    id = await svc.create_call('CA_TEST', '+49123', '+49456')
-    call = await svc.get_call('CA_TEST')
-    assert call['call_sid'] == 'CA_TEST'
-    print('Supabase OK, id=' + id)
-
-asyncio.run(test())
-"
-```
+## ⚠️ Pre-production Checklist
+- [x] schema.sql applied in Supabase
+- [x] SUPABASE_SERVICE_KEY is service_role JWT ✅
+- [x] Twilio webhook set to https://claimcall.eliteprojects.uk/incoming-call ✅
+- [ ] Docker stack deployed on Hetzner
+- [ ] Let's Encrypt SSL cert obtained on Hetzner
+- [ ] ElevenLabs webhook URL set to https://claimcall.eliteprojects.uk/webhook/call-complete
+- [ ] TWILIO_VALIDATE_REQUESTS=true in production .env
