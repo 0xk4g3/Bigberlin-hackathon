@@ -71,7 +71,7 @@ async def lifespan(app: FastAPI):
     app.state.aic_processor = None
     if settings.aicoustics_enabled and settings.aicoustics_api_key:
         try:
-            import aic_sdk as aic
+            import aic as aic
             model_path = aic.Model.download("quail-vf-2.1-l-16khz", "/tmp/aic_models")
             model = aic.Model.from_file(model_path)
             config = aic.ProcessorConfig.optimal(model, num_channels=1)

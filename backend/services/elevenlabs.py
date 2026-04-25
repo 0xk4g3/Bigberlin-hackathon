@@ -31,7 +31,7 @@ class ElevenLabsClient:
         url = f"{EL_WS_URL}?agent_id={self.agent_id}"
         self._ws = await websockets.connect(
             url,
-            additional_headers={"xi-api-key": self.api_key},
+            extra_headers={"xi-api-key": self.api_key},
             ping_interval=None,  # EL manages its own ping/pong protocol
         )
         logger.info("ElevenLabs WebSocket connected for agent %s", self.agent_id)
