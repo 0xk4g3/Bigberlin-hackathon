@@ -144,7 +144,7 @@ async def enhance_with_aicoustics(
         loop = asyncio.get_event_loop()
         enhanced_2d = await asyncio.wait_for(
             loop.run_in_executor(None, _enhance),
-            timeout=0.2,
+            timeout=0.05,
         )
         enhanced_1d = enhanced_2d.flatten()
         enhanced_int16 = np.clip(enhanced_1d * 32768.0, -32768, 32767).astype(np.int16)

@@ -71,13 +71,17 @@
     </div>
   </div>
 
-  <!-- Transcript Panel (middle) -->
-  <div class="col-span-4">
-    <div class="card p-4 h-full flex flex-col" style="min-height: 300px;">
+  <!-- Transcript + Claim Summary (middle) -->
+  <div class="col-span-4 flex flex-col gap-4">
+    <div class="card p-4 flex flex-col" style="min-height: 300px; max-height: 420px;">
       <h2 class="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide" id="transcript-title">Transcript</h2>
       <div id="transcript-panel" class="flex-1 overflow-y-auto space-y-1 text-sm text-slate-400">
         <div class="text-xs text-slate-500">Click a call to view transcript</div>
       </div>
+    </div>
+    <div id="claim-detail" class="card p-4" style="display:none;">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Extracted FNOL</h2>
+      <div id="claim-detail-body" class="text-sm space-y-3"></div>
     </div>
   </div>
 
@@ -226,7 +230,50 @@
         clearInterval(transcriptPollTimer);
         transcriptPollTimer = null;
       }
+
+      // Render extracted claim if available
+      const claim = (call.claims || [])[0] || null;
+      renderClaimDetail(claim);
     } catch(e) {}
+  }
+
+  function renderClaimDetail(c) {
+    const box = document.getElementById('claim-detail');
+    const body = document.getElementById('claim-detail-body');
+    if (!c) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+
+    const row = (label, val) => val
+      ? `<div class="flex gap-2"><span class="text-slate-500 w-32 shrink-0">${label}</span><span class="text-slate-200">${val}</span></div>`
+      : '';
+
+    const lossType = (c.loss_type || '').replace(/_/g, ' ');
+    const drivable = c.vehicle_drivable === true ? 'Yes' : c.vehicle_drivable === false ? 'No' : '';
+
+    body.innerHTML = `
+      <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+        ${row('Policy', c.policy_number)}
+        ${row('Name', c.policyholder_name)}
+        ${row('Phone', c.policyholder_phone)}
+        ${row('Loss type', lossType)}
+        ${row('Incident date', c.incident_date)}
+        ${row('Location', c.incident_location)}
+        ${row('Vehicle', [c.vehicle_make, c.vehicle_model].filter(Boolean).join(' '))}
+        ${row('Plate', c.license_plate)}
+        ${row('Drivable', drivable)}
+        ${row('Other party', c.other_party_name)}
+      </div>
+      <div class="flex gap-2 flex-wrap mt-2">
+        ${URGENCY_BADGES[c.urgency] || ''}
+        ${FRAUD_BADGES[c.fraud_score] || ''}
+        ${c.siu_referral ? '<span class="badge" style="background:#7f1d1d;color:#fca5a5">⚠ SIU</span>' : ''}
+        ${c.police_on_scene ? '<span class="badge" style="background:#1e3a5f;color:#93c5fd">Police on scene</span>' : ''}
+        ${c.injuries_reported ? '<span class="badge" style="background:#7c2d12;color:#fdba74">Injuries</span>' : ''}
+        ${c.rental_requested ? '<span class="badge" style="background:#1e293b;color:#94a3b8">Rental req.</span>' : ''}
+      </div>
+      ${c.urgency_reason ? `<div class="text-xs text-slate-500 mt-1">Urgency: ${c.urgency_reason}</div>` : ''}
+      ${c.fraud_signals && c.fraud_signals.length ? `<div class="text-xs text-red-400 mt-1">Fraud signals: ${c.fraud_signals.join(', ')}</div>` : ''}
+    `;
   }
 
   // ── Claims ──────────────────────────────────────────────────────────────────

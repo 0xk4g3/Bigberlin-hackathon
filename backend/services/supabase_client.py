@@ -126,7 +126,7 @@ class SupabaseService:
         try:
             res = await (
                 self._db.table("calls")
-                .select("*, transcripts(*), claims(id, urgency, fraud_score, status)")
+                .select("*, transcripts(*), claims(*)")
                 .eq("call_sid", call_sid)
                 .single()
                 .execute()
