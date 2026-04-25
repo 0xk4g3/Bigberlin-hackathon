@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClaimCall Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.5 } }
+    .transcript-line { padding: 4px 0; border-bottom: 1px solid #1e293b; font-size: 0.875rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th { text-align: left; padding: 10px 12px; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+    td { padding: 12px; border-bottom: 1px solid #1e293b; font-size: 0.875rem; vertical-align: middle; }
+    tr:hover td { background: #1e293b; }
+    .siu-row td { border-left: 3px solid #ef4444; }
+    button.approve-btn { background: #16a34a; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none; }
+    button.approve-btn:hover { background: #15803d; }
+    button.approve-btn:disabled { background: #374151; cursor: not-allowed; }
+    .active-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 6px; }
+    input, select { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; border-radius: 6px; padding: 6px 10px; font-size: 0.875rem; }
+    input:focus, select:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<div class="border-b border-slate-700 px-6 py-4">
+  <div class="flex items-center justify-between max-w-screen-2xl mx-auto">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl font-bold text-white">🎙 ClaimCall</span>
+      <span class="text-xs text-slate-400 mt-1">FNOL Operations Dashboard</span>
+    </div>
+    <div id="stats-bar" class="flex gap-6 text-sm">
+      <div class="flex items-center gap-1">
+        <span class="text-slate-400">Active</span>
+        <span id="stat-active" class="font-bold text-white">—</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <span class="text-slate-400">Today</span>
+        <span id="stat-today" class="font-bold text-white">—</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <span class="text-red-400">SIU</span>
+        <span id="stat-siu" class="font-bold text-red-400">—</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <span class="text-orange-400">Critical</span>
+        <span id="stat-critical" class="font-bold text-orange-400">—</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <span class="text-slate-400">Avg</span>
+        <span id="stat-avg" class="font-bold text-white">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="max-w-screen-2xl mx-auto px-6 py-6 grid grid-cols-12 gap-6">
+
+  <!-- Live Calls (left sidebar) -->
+  <div class="col-span-3">
+    <div class="card p-4">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Live Calls</h2>
+      <div id="calls-list" class="space-y-2 text-sm">
+        <div class="text-slate-500 text-xs">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transcript Panel (middle) -->
+  <div class="col-span-4">
+    <div class="card p-4 h-full flex flex-col" style="min-height: 300px;">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide" id="transcript-title">Transcript</h2>
+      <div id="transcript-panel" class="flex-1 overflow-y-auto space-y-1 text-sm text-slate-400">
+        <div class="text-xs text-slate-500">Click a call to view transcript</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Claims Table (right) -->
+  <div class="col-span-5">
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wide">Claims</h2>
+        <div class="flex gap-2">
+          <select id="filter-urgency" onchange="loadClaims()" class="text-xs">
+            <option value="">All Urgency</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="moderate">Moderate</option>
+            <option value="routine">Routine</option>
+          </select>
+          <select id="filter-fraud" onchange="loadClaims()" class="text-xs">
+            <option value="">All Fraud</option>
+            <option value="high">Fraud High</option>
+            <option value="medium">Fraud Medium</option>
+            <option value="low">Fraud Low</option>
+          </select>
+          <select id="filter-status" onchange="loadClaims()" class="text-xs">
+            <option value="">All Status</option>
+            <option value="opened">Opened</option>
+            <option value="processing">Processing</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+      </div>
+      <div class="overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Name</th>
+              <th>Loss Type</th>
+              <th>Urgency</th>
+              <th>Fraud</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="claims-table">
+            <tr><td colspan="7" class="text-slate-500 text-xs">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const URGENCY_BADGES = {
+    critical: '<span class="badge" style="background:#7f1d1d;color:#fca5a5">🔴 CRITICAL</span>',
+    high:     '<span class="badge" style="background:#7c2d12;color:#fdba74">🟠 HIGH</span>',
+    moderate: '<span class="badge" style="background:#713f12;color:#fde68a">🟡 MODERATE</span>',
+    routine:  '<span class="badge" style="background:#14532d;color:#86efac">🟢 ROUTINE</span>',
+  };
+  const FRAUD_BADGES = {
+    high:   '<span class="badge" style="background:#7f1d1d;color:#fca5a5">🔴 High</span>',
+    medium: '<span class="badge" style="background:#7c2d12;color:#fdba74">🟠 Medium</span>',
+    low:    '<span class="badge" style="background:#14532d;color:#86efac">🟢 Low</span>',
+  };
+  const STATUS_BADGES = {
+    opened:     '<span class="badge" style="background:#1e3a5f;color:#93c5fd">Opened</span>',
+    processing: '<span class="badge" style="background:#1e3a5f;color:#67e8f9">Processing</span>',
+    closed:     '<span class="badge" style="background:#1e293b;color:#94a3b8">Closed</span>',
+    denied:     '<span class="badge" style="background:#3b0a0a;color:#fca5a5">Denied</span>',
+  };
+
+  let selectedCallSid = null;
+  let transcriptPollTimer = null;
+
+  // ── Stats ───────────────────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const r = await fetch('/api/claims/stats');
+      const d = await r.json();
+      document.getElementById('stat-active').textContent = d.active_calls ?? '—';
+      document.getElementById('stat-today').textContent = d.claims_today ?? '—';
+      document.getElementById('stat-siu').textContent = d.siu_flags_open ?? '—';
+      document.getElementById('stat-critical').textContent = d.critical_open ?? '—';
+      const s = d.avg_call_duration_seconds || 0;
+      document.getElementById('stat-avg').textContent = s ? `${Math.floor(s/60)}m${s%60}s` : '—';
+    } catch(e) {}
+  }
+
+  // ── Calls ───────────────────────────────────────────────────────────────────
+  async function loadCalls() {
+    try {
+      const r = await fetch('/api/calls?limit=20');
+      const calls = await r.json();
+      const container = document.getElementById('calls-list');
+      if (!calls.length) { container.innerHTML = '<div class="text-slate-500 text-xs">No calls yet</div>'; return; }
+      container.innerHTML = calls.map(c => {
+        const isActive = c.status === 'in_progress';
+        const preview = (c.transcript_preview || []).map(t => `${t.speaker}: ${t.text}`).join(' · ') || '';
+        return `<div class="p-2 rounded cursor-pointer hover:bg-slate-700 transition ${selectedCallSid === c.call_sid ? 'bg-slate-700 border border-blue-500' : 'border border-transparent'}"
+                     onclick="selectCall('${c.call_sid}')">
+          <div class="flex items-center gap-1">
+            ${isActive ? '<span class="active-dot pulse"></span>' : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#475569;margin-right:6px;"></span>'}
+            <span class="font-mono text-xs text-white">${c.from_number || 'Unknown'}</span>
+            ${c.siu_referral ? '<span class="ml-auto text-red-400 text-xs font-bold">SIU</span>' : ''}
+          </div>
+          ${preview ? `<div class="text-xs text-slate-500 truncate mt-1">${preview.substring(0,60)}…</div>` : ''}
+          <div class="text-xs text-slate-600 mt-1">${c.status} · ${c.duration_seconds ? c.duration_seconds + 's' : 'active'}</div>
+        </div>`;
+      }).join('');
+    } catch(e) {}
+  }
+
+  // ── Transcript ──────────────────────────────────────────────────────────────
+  async function selectCall(callSid) {
+    selectedCallSid = callSid;
+    if (transcriptPollTimer) clearInterval(transcriptPollTimer);
+    await refreshTranscript(callSid);
+    transcriptPollTimer = setInterval(() => refreshTranscript(callSid), 2000);
+    loadCalls();
+  }
+
+  async function refreshTranscript(callSid) {
+    try {
+      const r = await fetch(`/api/calls/${callSid}`);
+      if (!r.ok) return;
+      const call = await r.json();
+      document.getElementById('transcript-title').textContent =
+        `Transcript — ${call.from_number || callSid} (${call.status})`;
+      const transcript = call.transcript || (call.transcripts || []).map(t => ({speaker:t.speaker, text:t.text}));
+      if (!transcript.length) {
+        document.getElementById('transcript-panel').innerHTML = '<div class="text-xs text-slate-500">No transcript yet</div>';
+        return;
+      }
+      document.getElementById('transcript-panel').innerHTML = transcript.map(t => {
+        const isSophie = t.speaker === 'agent';
+        return `<div class="transcript-line">
+          <span class="font-semibold ${isSophie ? 'text-blue-400' : 'text-green-400'}">${isSophie ? 'Sophie' : 'Caller'}:</span>
+          <span class="text-slate-300 ml-1">${t.text}</span>
+        </div>`;
+      }).join('');
+      const panel = document.getElementById('transcript-panel');
+      panel.scrollTop = panel.scrollHeight;
+
+      if (call.status !== 'in_progress') {
+        clearInterval(transcriptPollTimer);
+        transcriptPollTimer = null;
+      }
+    } catch(e) {}
+  }
+
+  // ── Claims ──────────────────────────────────────────────────────────────────
+  async function loadClaims() {
+    const urgency = document.getElementById('filter-urgency').value;
+    const fraud = document.getElementById('filter-fraud').value;
+    const status = document.getElementById('filter-status').value;
+    const params = new URLSearchParams({ limit: 50 });
+    if (urgency) params.set('urgency', urgency);
+    if (fraud) params.set('fraud_score', fraud);
+    if (status) params.set('status', status);
+    try {
+      const r = await fetch(`/api/claims?${params}`);
+      const claims = await r.json();
+      const tbody = document.getElementById('claims-table');
+      if (!claims.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-slate-500 text-xs">No claims found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = claims.map(c => {
+        const canApprove = ['opened', 'processing'].includes(c.status);
+        const isSIU = c.siu_referral;
+        return `<tr class="${isSIU ? 'siu-row' : ''}">
+          <td class="font-mono text-xs text-slate-400">${(c.id||'').substring(0,8).toUpperCase()}</td>
+          <td class="text-white">${c.policyholder_name || '—'}<br>
+            <span class="text-xs text-slate-400">${c.policy_number || ''}</span>
+          </td>
+          <td class="text-xs text-slate-300">${(c.loss_type||'—').replace(/_/g,' ')}</td>
+          <td>${URGENCY_BADGES[c.urgency] || c.urgency || '—'}</td>
+          <td>${FRAUD_BADGES[c.fraud_score] || c.fraud_score || '—'}${isSIU ? ' <span class="badge" style="background:#7f1d1d;color:#fca5a5;margin-left:2px">SIU</span>' : ''}</td>
+          <td>${STATUS_BADGES[c.status] || c.status || '—'}</td>
+          <td>${canApprove ? `<button class="approve-btn" onclick="approveClaim('${c.id}', this)">Approve</button>` : ''}</td>
+        </tr>`;
+      }).join('');
+    } catch(e) {}
+  }
+
+  async function approveClaim(claimId, btn) {
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      const r = await fetch(`/api/claims/${claimId}/approve`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({approved_by: 'operator'})
+      });
+      if (r.ok) { loadClaims(); } else { btn.disabled = false; btn.textContent = 'Approve'; }
+    } catch(e) { btn.disabled = false; btn.textContent = 'Approve'; }
+  }
+
+  // ── Polling ─────────────────────────────────────────────────────────────────
+  loadStats();   setInterval(loadStats, 10000);
+  loadCalls();   setInterval(loadCalls, 5000);
+  loadClaims();  setInterval(loadClaims, 15000);
+</script>
+</body>
+</html>

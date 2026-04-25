@@ -1,0 +1,16 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+websockets==12.0
+twilio==9.3.0
+supabase==2.5.0
+python-dotenv==1.0.1
+numpy==1.26.4
+scipy==1.13.1
+httpx==0.27.2
+pydantic==2.7.4
+pydantic-settings==2.3.4
+aiofiles==23.2.1
+python-multipart==0.0.9
+# AI-Coustics SDK: pip install aic-sdk
+# (not pinned here — check https://docs.ai-coustics.com for latest version)
+aic-sdk
