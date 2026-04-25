@@ -12,10 +12,9 @@ import asyncio
 import base64
 import json
 import logging
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional
 
 import websockets
-from websockets.asyncio.client import ClientConnection
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ class ElevenLabsClient:
     def __init__(self, agent_id: str, api_key: str):
         self.agent_id = agent_id
         self.api_key = api_key
-        self._ws: Optional[ClientConnection] = None
+        self._ws: Optional[Any] = None
 
     async def connect(self) -> "ElevenLabsClient":
         url = f"{EL_WS_URL}?agent_id={self.agent_id}"
