@@ -9,7 +9,8 @@ build:
 	docker compose up -d --build
 
 rebuild:
-    docker compose build --no-cache claimcall && docker compose up -d 
+	docker compose build --no-cache claimcall
+	docker compose up -d
 
 down:
 	docker compose down
