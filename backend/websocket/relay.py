@@ -195,7 +195,6 @@ class CallRelay:
                 try:
                     twilio_payload = elevenlabs_audio_to_twilio_payload(
                         audio_b64,
-                        el_is_mulaw=True,
                         apply_filter=settings.apply_telephone_filter,
                         filter_order=settings.telephone_filter_order,
                     )
