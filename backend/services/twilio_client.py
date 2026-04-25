@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 
 class TwilioClient:
     def __init__(self, settings: Settings):
-        self._client = TwilioSDKClient(settings.twilio_account_sid, settings.twilio_auth_token)
+        self._client = TwilioSDKClient(
+            settings.twilio_api_key_sid,
+            settings.twilio_api_key_secret,
+            account_sid=settings.twilio_account_sid,
+        )
         self._from_number = settings.twilio_phone_number
 
     async def send_sms(self, to: str, body: str) -> None:

@@ -14,7 +14,8 @@ class Settings(BaseSettings):
 
     # Twilio
     twilio_account_sid: str
-    twilio_auth_token: str
+    twilio_api_key_sid: str
+    twilio_api_key_secret: str
     twilio_phone_number: str
     twilio_validate_requests: bool = True
 
