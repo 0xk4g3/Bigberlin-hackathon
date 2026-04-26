@@ -27,7 +27,7 @@ SERVER_PORT = int(os.getenv("SERVER_PORT", "8080"))
 
 # Optional - tunnel or production URL (e.g. https://xxxx.ngrok.io).
 # Set automatically by setup.py, or manually for tunnel-based workflows.
-# When set, the /incoming-call webhook uses this to tell Twilio where to
+# When set, the /incoming-call webhook uses it to tell Twilio where to
 # stream audio.  When not set, the server runs in local-only mode.
 SERVER_EXTERNAL_URL = os.getenv("SERVER_EXTERNAL_URL")
 
@@ -45,7 +45,18 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
 
 # ---------------------------------------------------------------------------
-# Security (optional - set by setup.py when deploying to Fly.io)
+# ElevenLabs ConvAI (Twilio bridge — see voice_agent/elevenlabs_session.py)
+# ---------------------------------------------------------------------------
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+ELEVENLABS_AGENT_ID = os.getenv("ELEVENLABS_AGENT_ID")
+ELEVENLABS_COMPANY_NAME = os.getenv("ELEVENLABS_COMPANY_NAME", "INCA Insurance")
+
+# Post-call transcript → dashboard JSON
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+CLAIM_EXTRACTION_MODEL = os.getenv("CLAIM_EXTRACTION_MODEL", "gpt-4o-mini")
+
+# ---------------------------------------------------------------------------
+# Security (optional - set automatically by setup.py when deploying to Fly.io)
 # ---------------------------------------------------------------------------
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
 

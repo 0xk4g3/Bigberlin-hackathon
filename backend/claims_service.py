@@ -113,11 +113,18 @@ async def finalize_call(
     mins, sec = divmod(duration_secs, 60)
     duration_str = f"{mins:02d}:{sec:02d}"
 
+    vehicle_plate = (
+        draft.get("vehicle_plate")
+        or draft.get("caller_vehicle_plate")
+        or draft.get("license_plate")
+    )
+
     fields = [
         {"key": "Date of loss",    "value": draft.get("date_of_loss")},
         {"key": "Time of loss",    "value": draft.get("time_of_loss")},
         {"key": "Location",        "value": location},
         {"key": "Loss type",       "value": loss_type},
+        {"key": "Vehicle plate",   "value": vehicle_plate},
         {"key": "3rd party plate", "value": draft.get("third_party_plate")},
         {"key": "Police report",   "value": draft.get("police_report")},
         {"key": "Injuries",        "value": draft.get("injuries")},

@@ -4,3 +4,5 @@ deepgram-sdk==6.0.0
 twilio==9.10.2
 python-dotenv==1.2.1
 python-multipart==0.0.22
+websockets==16.0
+openai>=1.54.0,<2

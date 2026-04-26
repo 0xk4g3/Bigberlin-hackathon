@@ -19,7 +19,14 @@ from starlette.applications import Starlette
 from starlette.routing import Route, WebSocketRoute
 from starlette.responses import PlainTextResponse
 
-from config import SERVER_HOST, SERVER_PORT, SERVER_EXTERNAL_URL, DEEPGRAM_API_KEY
+from config import (
+    SERVER_HOST,
+    SERVER_PORT,
+    SERVER_EXTERNAL_URL,
+    DEEPGRAM_API_KEY,
+    ELEVENLABS_API_KEY,
+    ELEVENLABS_AGENT_ID,
+)
 from telephony.routes import incoming_call, twilio_websocket
 from backend.claims_service import register_ws_client
 
@@ -61,6 +68,10 @@ app = Starlette(
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     logger.info(f"Deepgram API key: {'configured' if DEEPGRAM_API_KEY else 'MISSING'}")
+    logger.info(
+        f"ElevenLabs: api_key={'set' if ELEVENLABS_API_KEY else 'MISSING'} "
+        f"agent_id={'set' if ELEVENLABS_AGENT_ID else 'MISSING'}"
+    )
     if SERVER_EXTERNAL_URL:
         logger.info(f"External URL: {SERVER_EXTERNAL_URL}")
         logger.info(f"Twilio webhook: {SERVER_EXTERNAL_URL}/incoming-call")

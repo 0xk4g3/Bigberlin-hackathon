@@ -10,7 +10,7 @@ Two endpoints:
 
   WS /twilio
     Receives the audio stream from Twilio (or from dev_client.py in local mode).
-    Creates a VoiceAgentSession and bridges audio to/from Deepgram.
+    Creates a VoiceAgentSession and bridges audio to/from ElevenLabs ConvAI.
 
 The server doesn't know or care whether the WebSocket connection comes from
 a real Twilio call or from dev_client.py - both send identical messages.
@@ -28,7 +28,7 @@ from starlette.routing import Route
 from starlette.websockets import WebSocket
 
 from config import SERVER_EXTERNAL_URL, TWILIO_AUTH_TOKEN, WEBHOOK_SECRET
-from voice_agent.session import VoiceAgentSession
+from voice_agent.elevenlabs_session import ElevenLabsSession as VoiceAgentSession
 
 logger = logging.getLogger(__name__)
 
@@ -127,8 +127,8 @@ async def twilio_websocket(websocket: WebSocket):
       5. Twilio sends a "stop" event when the call ends
 
     This handler creates a VoiceAgentSession and delegates all audio
-    processing to it.  The session handles the Deepgram connection,
-    audio bridging, function calls, and cleanup.
+    processing to it.  The session handles the ElevenLabs connection,
+    audio bridging, and cleanup (including post-call claim extraction).
     """
     # Check webhook secret (path token)
     if not _check_webhook_secret(websocket.path_params):
@@ -162,7 +162,6 @@ async def twilio_websocket(websocket: WebSocket):
         session = VoiceAgentSession(websocket, call_sid, stream_sid, caller_phone=caller_phone)
         active_sessions[call_sid] = session
 
-        await session.start()
         await session.run()
 
     except Exception as e:
