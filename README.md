@@ -7,6 +7,7 @@
 | **Repository** | [github.com/0xk4g3/Bigberlin-hackathon](https://github.com/0xk4g3/Bigberlin-hackathon) |
 | **Team** | **noTime** |
 | **Stack (production path)** | Python · Starlette · Uvicorn · Twilio Media Streams · ElevenLabs Conversational AI · OpenAI · Next.js |
+| **Pioneer & Entire (sponsors)** | **[Full setup & judge confirmation →](docs/SPONSOR_PIONEER_ENTIRE.md)** — Pioneer code in `integrations/`; Entire via CLI + overview link |
 
 ---
 
@@ -26,6 +27,7 @@
 12. [Project structure](#project-structure)
 13. [Troubleshooting](#troubleshooting)
 14. [Sponsor tracks: Pioneer & Entire](#sponsor-tracks-pioneer--entire)
+15. [**Pioneer & Entire — full guide (repo doc)**](docs/SPONSOR_PIONEER_ENTIRE.md)
 
 ---
 
@@ -36,6 +38,7 @@
 - **Human-like delivery**: System prompt and TTS tuning (ElevenLabs **v3 conversational**, expressive tags where supported) keep turns short and natural.
 - **Post-call extraction**: When the call ends, **OpenAI** turns the transcript into structured JSON (names, plates, loss details, etc.) for downstream systems.
 - **Live dashboard**: A **Next.js** app connects to the Python server over **`/ws`** and receives **`call_ended`** payloads with transcript + extracted fields for demo operators.
+- **Sponsor tracks**: **[Pioneer](https://pioneer.ai/)** (optional GLiNER2 NER + risk demo in `integrations/`) and **[Entire](https://entire.io/)** (provenance / repo overview) — see **[docs/SPONSOR_PIONEER_ENTIRE.md](docs/SPONSOR_PIONEER_ENTIRE.md)**; does not change the live call pipeline.
 
 ---
 
@@ -254,7 +257,7 @@ On each completed call, the server broadcasts a **`call_ended`** message with tr
 │   └── models.py
 ├── integrations/               # Pioneer + offline risk demo (not imported by main.py)
 ├── inca-dashboard/             # Next.js operator UI
-└── docs/                       # CLAIMAI.pdf + architecture & prompt guides
+└── docs/                       # CLAIMAI.pdf, SPONSOR_PIONEER_ENTIRE.md, architecture guides
 ```
 
 ---
@@ -272,6 +275,8 @@ On each completed call, the server broadcasts a **`call_ended`** message with tr
 ---
 
 ## Sponsor tracks: Pioneer & Entire
+
+**→ Canonical guide in repo:** **[docs/SPONSOR_PIONEER_ENTIRE.md](docs/SPONSOR_PIONEER_ENTIRE.md)** (commands, env vars, judge confirmation, Entire overview link).
 
 These integrations are **submission and research layers only**. They do **not** import into `main.py`, `telephony/`, or `voice_agent/elevenlabs_session.py` — inbound calls, Twilio, and ElevenLabs behaviour are unchanged.
 
