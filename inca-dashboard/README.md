@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# INCA operator dashboard — Team **noTime**
 
-## Getting Started
+Next.js UI for the **Big Berlin Hackathon** submission: live view of completed FNOL calls (transcript + extracted claim fields) pushed from the Python voice server over WebSocket.
 
-First, run the development server:
+Parent project (Twilio · ElevenLabs · setup): see **[../README.md](../README.md)**.
+
+## Run locally
+
+From this directory:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Connect to the voice backend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The Python app exposes **`WebSocket /ws`** (see `backend/claims_service.py`). Point the dashboard at the same host as your API server.
 
-## Learn More
+1. Start **`python3 main.py`** from the repo root (with `.env` configured).
+2. Optional **`.env.local`** — the app uses **`NEXT_PUBLIC_WS_URL`** (see `app/claims/page.tsx`). Default if unset: `ws://localhost:8080/ws`. Match your **`SERVER_PORT`** (e.g. `ws://localhost:8989/ws`). Behind **ngrok**, use **`wss://<your-host>/ws`**.
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Example when voice server runs on 8989 locally
+echo 'NEXT_PUBLIC_WS_URL=ws://localhost:8989/ws' > .env.local
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Next.js 16**, **React 19**, **TypeScript**, **Tailwind CSS 4**
 
-## Deploy on Vercel
+## Team
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**noTime** — [Bigberlin-hackathon](https://github.com/0xk4g3/Bigberlin-hackathon)

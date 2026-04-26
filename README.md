@@ -1,350 +1,290 @@
-# Inbound Telephony Voice Agent
+# Big Berlin Hackathon — Team **noTime**
 
-A reference implementation for building a secure inbound telephony voice agent using [Deepgram's Voice Agent API](https://developers.deepgram.com/docs/voice-agent) and [Twilio](https://www.twilio.com/). Uses [Deepgram Flux](https://developers.deepgram.com/docs/models-overview) for speech-to-text with native turn-taking optimized for real-time voice agent conversations. Includes webhook endpoint protection and Twilio request signature validation out of the box.
+**INCA motor FNOL voice agent** — callers reach a natural-sounding phone assistant (**Klaus**) that takes a **first notice of loss (FNOL)** for traffic and vehicle damage. Audio is streamed in real time; after the call, structured claim fields are extracted for a live **operator dashboard**.
 
-Callers dial a phone number and talk to an AI receptionist that can check appointment availability, book appointments, look up existing appointments, and cancel appointments, all through natural voice conversation.
+| | |
+|--|--|
+| **Repository** | [github.com/0xk4g3/Bigberlin-hackathon](https://github.com/0xk4g3/Bigberlin-hackathon) |
+| **Team** | **noTime** |
+| **Stack (production path)** | Python · Starlette · Uvicorn · Twilio Media Streams · ElevenLabs Conversational AI · OpenAI · Next.js |
+
+---
+
+## Table of contents
+
+1. [What we built](#what-we-built)
+2. [Why it matters](#why-it-matters)
+3. [Architecture](#architecture)
+4. [Tech stack](#tech-stack)
+5. [Prerequisites](#prerequisites)
+6. [Environment variables](#environment-variables)
+7. [Local setup (hackathon demo)](#local-setup-hackathon-demo)
+8. [Twilio configuration](#twilio-configuration)
+9. [ElevenLabs agent](#elevenlabs-agent)
+10. [Operator dashboard](#operator-dashboard)
+11. [Optional paths](#optional-paths)
+12. [Project structure](#project-structure)
+13. [Troubleshooting](#troubleshooting)
+14. [Submission checklist](#submission-checklist)
+
+---
+
+## What we built
+
+- **Inbound voice**: A caller dials a **Twilio** German number; Twilio opens a **bidirectional media stream** (WebSocket) to our server.
+- **AI conversation**: Our server bridges **μ-law 8 kHz** (Twilio) ↔ **PCM 16 kHz** (ElevenLabs) and talks to **ElevenLabs Conversational AI** over a secure WebSocket. The agent (**Klaus**) follows a strict **FNOL** script: safety, identity, policy/plate, incident facts, third parties, police, injuries, read-back, closure.
+- **Human-like delivery**: System prompt and TTS tuning (ElevenLabs **v3 conversational**, expressive tags where supported) keep turns short and natural.
+- **Post-call extraction**: When the call ends, **OpenAI** turns the transcript into structured JSON (names, plates, loss details, etc.) for downstream systems.
+- **Live dashboard**: A **Next.js** app connects to the Python server over **`/ws`** and receives **`call_ended`** payloads with transcript + extracted fields for demo operators.
+
+---
+
+## Why it matters
+
+Insurance FNOL by phone is high-stakes: callers may be stressed, on a motorway, or speaking **English or German**. This demo shows **low-latency streaming voice**, **guardrailed** intake (no “I’m a bot”), and **structured handoff** to humans or core systems — without replacing the claims handler, only front-loading consistent data capture.
+
+---
 
 ## Architecture
 
 ```
                     ┌──────────────┐
-                    │  Phone Call  │
+                    │  Phone call  │
                     └──────┬───────┘
                            │
                     ┌──────▼───────┐
                     │    Twilio    │
-                    │ Media Stream │
+                    │ Voice + <Connect><Stream> │
                     └──────┬───────┘
-                           │ WebSocket (mulaw audio as base64 JSON)
+                           │  HTTPS POST /incoming-call  (TwiML)
+                           │  WSS  /twilio  (mulaw JSON frames)
                            │
               ┌────────────▼────────────────┐
-              │     Application Server      │
-              │         (Starlette)         │
-              │                             │
-              │  POST /incoming-call        │  ← Twilio webhook (returns TwiML)
-              │  WS   /twilio               │  ← Audio stream
-              │                             │
-              │  ┌───────────────────────┐  │
-              │  │  VoiceAgentSession    │  │  ← One per call
-              │  │                       │  │
-              │  │  Twilio ←→ Deepgram   │  │  ← Audio bridge
-              │  │  audio       audio    │  │
-              │  │  (base64)    (raw)    │  │
-              │  └───────────┬───────────┘  │
-              │              │              │
-              │  ┌───────────▼───────────┐  │
-              │  │  Function Handlers    │  │  ← Routes agent tool calls
-              │  └───────────┬───────────┘  │
-              └──────────────┼──────────────┘
-                             │
-              ┌──────────────▼──────────────┐
-              │   Backend Service           │
-              │   (Mock Scheduling API)     │
-              │                             │
-              │   - Check available slots   │
-              │   - Book appointments       │
-              │   - Look up appointments    │
-              │   - Cancel appointments     │
-              └─────────────────────────────┘
+              │   Application server         │
+              │   Starlette + Uvicorn        │
+              │                              │
+              │   ElevenLabsSession          │
+              │   Twilio WS  ↔  ElevenLabs   │
+              │   (resample + encode)       │
+              └────────────┬────────────────┘
+                           │
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+         ▼                 ▼                 ▼
+  ┌──────────────┐ ┌──────────────┐ ┌─────────────────┐
+  │ ElevenLabs   │ │ OpenAI       │ │ Next.js         │
+  │ ConvAI       │ │ (post-call)  │ │ dashboard /ws   │
+  │ STT+LLM+TTS  │ │ extraction   │ │ live tickets    │
+  └──────────────┘ └──────────────┘ └─────────────────┘
 ```
 
-### Audio Flow
+### Audio flow (live call)
 
-1. Caller speaks into their phone
-2. Twilio captures the audio and streams it as base64-encoded mulaw over WebSocket
-3. The application server decodes the base64 and sends raw mulaw bytes to Deepgram's Voice Agent API
-4. Deepgram handles the full pipeline: speech-to-text, LLM reasoning, text-to-speech
-5. Deepgram sends back raw mulaw audio bytes
-6. The application server encodes to base64 and sends as JSON to Twilio
-7. Twilio plays the audio to the caller
+1. Caller speaks → Twilio encodes **8 kHz μ-law**, sends **base64** inside JSON `media` events on **`/twilio`**.
+2. Server decodes μ-law → linear PCM, **resamples 8 kHz → 16 kHz**, base64-wraps as **`user_audio_chunk`** to ElevenLabs.
+3. ElevenLabs returns agent audio as **binary PCM** and/or JSON **`audio`** events; server **resamples 16 kHz → 8 kHz**, **μ-law** encodes, sends Twilio **`media`** outbound frames.
+4. On barge-in / interruption, server can send Twilio **`clear`** to flush queued outbound audio.
 
-### Key Technical Concepts
+Caller uplink is started **in parallel** with the ElevenLabs handshake so the pipeline sees line audio early (avoids “answered but silent” during init).
 
-**Single WebSocket bridge**: The core of the system is `VoiceAgentSession`, which bridges two WebSocket connections (one to Twilio, one to Deepgram). It translates between Twilio's JSON-based protocol and Deepgram's binary audio protocol.
+---
 
-**Barge-in**: When the Deepgram Voice Agent detects that the user started speaking, the server sends a Twilio "clear" event to immediately stop playing agent audio. This prevents the agent from talking over the caller.
+## Tech stack
 
-**Function calls**: The Deepgram Voice Agent API supports tool use. When the LLM decides to call a function (like checking appointment availability), Deepgram sends a function call event. The server executes it against the backend service and sends the result back to Deepgram, which incorporates it into the agent's next response.
+| Layer | Technology |
+|--------|------------|
+| HTTP / WebSocket server | **Python 3.12+**, **Starlette**, **Uvicorn** |
+| Telephony | **Twilio** Programmable Voice, **Media Streams**, TwiML `<Connect><Stream>` |
+| Voice AI | **ElevenLabs** Conversational AI WebSocket API (`wss://api.elevenlabs.io/v1/convai/...`) |
+| Agent LLM (hosted in ElevenLabs) | **Google Gemini** (e.g. `gemini-2.5-flash` — set in agent sync) |
+| Audio transcoding | **`audioop`** (stdlib): μ-law ↔ PCM, sample-rate conversion |
+| WebSocket client to ElevenLabs | **`websockets`** |
+| Structured extraction | **OpenAI** API (`openai` SDK), JSON mode |
+| Dashboard | **Next.js 16**, **React 19**, **TypeScript**, **Tailwind CSS 4** |
+| Config | **`python-dotenv`**, `.env` (never commit secrets) |
 
-**Protocol-agnostic server**: The server doesn't know whether audio comes from a real Twilio call or from the local development client (`dev_client.py`). Both send identical WebSocket messages. This means you can develop and test without a phone or Twilio account.
+**Legacy / alternate path in repo:** `voice_agent/session.py` + **Deepgram Voice Agent** — useful reference; **`main.py` inbound telephony uses ElevenLabs** via `telephony/routes.py` → `voice_agent/elevenlabs_session.py`.
 
-For a deeper look at the call flow, session lifecycle, and component details, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+---
 
-## Quick Start
+## Prerequisites
 
-The fastest path to a working telephony voice agent is the setup wizard, which configures Twilio and deploys to [Fly.io](https://fly.io).
+- **Python 3.12+**
+- **Twilio** account + **phone number** + Account SID + (**Auth Token** *or* **API Key** + secret)
+- **HTTPS public URL** for webhooks (e.g. **ngrok**) when running locally
+- **ElevenLabs** API key + **ConvAI agent ID**
+- **OpenAI** API key (for post-call extraction; dashboard fields stay sparse without it)
+- **Node.js** (for `inca-dashboard` only)
 
-### Prerequisites
+`DEEPGRAM_API_KEY` is still **required** by `config.py` at import time (project constraint); use a valid Deepgram key even if the live call path is ElevenLabs-only, or relax that check in a fork.
 
-- Python 3.12+
-- A [Deepgram account](https://console.deepgram.com/) and [API key](https://developers.deepgram.com/docs/create-additional-api-keys#create-an-api-key-using-the-deepgram-console)
-  - $200 free credits, no credit card required
-- A [Twilio account](https://www.twilio.com/try-twilio)
-  - New accounts come with trial credits.
-- A [Fly.io account](https://fly.io/app/sign-up) and [flyctl](https://fly.io/docs/flyctl/install/) installed and authenticated (`flyctl auth login`). 
-  - Fly.io's [free allowance](https://fly.io/docs/about/free-trial/) is more than enough for this reference implementation with the default suspend-on-idle configuration.
+---
 
-Note: Twilio trial accounts play a short disclaimer before connecting callers.
+## Environment variables
 
-### 1. Clone and Install
+Copy **`.env.example`** → **`.env`** and fill in values.
+
+| Variable | Required for | Description |
+|----------|----------------|-------------|
+| `DEEPGRAM_API_KEY` | App boot | Required by `config.py` today (Deepgram console). |
+| `SERVER_HOST` / `SERVER_PORT` | Server bind | Default `0.0.0.0` / `8080` — match your ngrok target port. |
+| `SERVER_EXTERNAL_URL` | Real Twilio calls | **HTTPS origin only** (no path), e.g. `https://xxxx.ngrok-free.app`. Used in TwiML for `wss://` stream host. |
+| `WEBHOOK_SECRET` | Recommended | Long random token; webhook becomes `/incoming-call/<token>` and stream `/twilio/<token>`. |
+| `TWILIO_ACCOUNT_SID` | Twilio API / validation | Account SID. |
+| `TWILIO_AUTH_TOKEN` | Optional | If set, Twilio **signature validation** runs on `/incoming-call` (URL must match Twilio’s configured URL exactly). |
+| `TWILIO_API_KEY_SID` / `TWILIO_API_KEY_SECRET` | Optional | Alternative to auth token for REST scripts. |
+| `TWILIO_PHONE_NUMBER` | Docs / scripts | E.164, e.g. `+493075420726`. |
+| `ELEVENLABS_API_KEY` | Live voice | ElevenLabs API key. |
+| `ELEVENLABS_AGENT_ID` | Live voice | ConvAI agent ID. |
+| `ELEVENLABS_VOICE_ID` | TTS voice | Default in sync: **Klaus** `Jvf6TAXwMUVTSR20U0f9` (override if needed). |
+| `ELEVENLABS_TTS_MODEL` | TTS | e.g. `eleven_v3_conversational` (tags) or `eleven_flash_v2` (faster, no v3 tags). |
+| `ELEVENLABS_COMPANY_NAME` | Prompt | Replaces `{{company_name}}` in first message and prompt. |
+| `OPENAI_API_KEY` | Extraction | Post-call structured FNOL JSON. |
+| `CLAIM_EXTRACTION_MODEL` | Extraction | Default `gpt-4o-mini`. |
+
+---
+
+## Local setup (hackathon demo)
 
 ```bash
-git clone https://github.com/deepgram-devs/deepgram-voice-agent-inbound-telephony.git
-cd deepgram-voice-agent-inbound-telephony
+git clone https://github.com/0xk4g3/Bigberlin-hackathon.git
+cd Bigberlin-hackathon
 
-python -m venv venv
-source venv/bin/activate
-
+python3 -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-### 2. Configure
-
-```bash
 cp .env.example .env
+# Edit .env — all keys above
+
+# Terminal A — tunnel (example: app on port 8989)
+ngrok http 8989
+
+# Put the https URL in SERVER_EXTERNAL_URL (no trailing path)
+
+# Terminal B — voice server
+python3 main.py
+
+# Terminal C (optional) — dashboard
+cd inca-dashboard
+npm install && npm run dev
 ```
 
-Edit `.env` and add your Deepgram API key:
+---
 
-```
-DEEPGRAM_API_KEY=your_key_here
-```
+## Twilio configuration
 
-### 3. Run the Setup Wizard
+1. **Voice & Fax → A call comes in**  
+   - **Webhook** to:  
+     `https://<YOUR_HOST>/incoming-call/<WEBHOOK_SECRET>`  
+     if `WEBHOOK_SECRET` is set, else  
+     `https://<YOUR_HOST>/incoming-call`  
+   - Method: **HTTP POST**.
+
+2. **Do not** leave a **TwiML App** on the number if it points elsewhere — either clear the app binding or set the app’s Voice URL to the same webhook. Otherwise Twilio will hit the wrong server.
+
+3. **`SERVER_EXTERNAL_URL`** in `.env` must use the **same host** as the webhook (ngrok URLs change each session on free tier — update Twilio every time).
+
+4. If **`TWILIO_AUTH_TOKEN`** is set, signature validation uses the **exact URL** Twilio requested; mismatches return **404**.
+
+The repo includes **`setup.py`** for Fly.io + Twilio wizard flows; for a quick hackathon tunnel, manual Console + `.env` is enough.
+
+---
+
+## ElevenLabs agent
+
+Agent prompt, voice, TTS sliders, and LLM binding are pushed from code:
 
 ```bash
-python setup.py
+python3 -m voice_agent.elevenlabs_fnol_sync
 ```
 
-The wizard will:
-1. Prompt for your [Twilio account credentials](https://help.twilio.com/articles/14726256820123-What-is-a-Twilio-Account-SID-and-where-can-I-find-it-) (from [console.twilio.com](https://www.twilio.com/console))
-2. Let you pick an existing phone number or purchase a new one
-3. Deploy your voice agent to Fly.io
-4. Automatically configure Twilio to route calls to your deployed voice agent
-
-When it's done, call your phone number and talk to your agent.
+Verify a voice ID works with your key:
 
 ```bash
-# Other setup wizard modes:
-python setup.py --twilio-only       # Skip Fly.io, provide your own URL
-python setup.py --update-url URL    # Quick Twilio webhook URL update
-python setup.py --status            # Show current config
-python setup.py --teardown          # Clean up deployment
+python3 -m voice_agent.elevenlabs_voice_check
 ```
 
-### Viewing Logs
+After PATCH, **publish** the agent in the **ElevenLabs** UI if **Published** still differs from **Main** — otherwise live calls may use an old revision.
 
-After deployment, view your application logs with:
+---
 
-```bash
-flyctl logs --app <your-app-name>
-```
+## Operator dashboard
 
-The app name is shown in the setup wizard output and in `python setup.py --status`.
+- **Path:** `inca-dashboard/`  
+- **Dev:** `npm run dev` (default Next.js port, often `3000`).  
+- **Backend feed:** Python app exposes **`WebSocket /ws`**. Configure the dashboard’s env (e.g. `NEXT_PUBLIC_WS_URL` in `inca-dashboard/.env.local`) to point at your running server (through ngrok if the dashboard runs on another machine).
 
-### Cold Starts
+On each completed call, the server broadcasts a **`call_ended`** message with transcript and merged claim fields for UI cards.
 
-The default configuration uses Fly.io's suspend mode. Your server suspends when idle and wakes in 1-3 seconds on incoming requests.
+---
 
-If you want instant response times for demos or production use, set `min_machines_running = 1` in `fly.toml` and redeploy to keep one VM always warm:
+## Optional paths
 
-```toml
-# fly.toml
-min_machines_running = 1
-```
+| Path | Purpose |
+|------|--------|
+| `python setup.py` | Interactive Twilio + optional Fly.io deploy. |
+| `python setup.py --twilio-only` / `--update-url URL` | Refresh webhooks. |
+| `python dev_client.py` | Mic/speaker test against local server **without** Twilio (needs `requirements-dev.txt`). |
+| `voice_agent/session.py` + Deepgram | Alternate stack; not wired in `main.py` for inbound. |
+| `docs/*.md` | Deepgram-era architecture and prompt guides — still useful reading. |
 
-See [Fly.io pricing](https://fly.io/docs/about/pricing/) for details.
+---
 
-### Twilio Regulatory Requirements
-
-Depending on your region, Twilio may require address verification before you can purchase a phone number. The setup wizard will surface any errors from Twilio. Follow the instructions in the [Twilio console](https://www.twilio.com/console) if prompted.
-
-## Alternative: Tunnel + Twilio
-
-If you prefer to run the server locally instead of deploying to Fly.io, you can use a tunnel to expose your locally running voice agent server via a public URL.
-
-### 1. Start a Tunnel
-
-```bash
-# ngrok
-ngrok http 8080
-
-# or zrok
-zrok share public localhost:8080
-```
-
-Copy the public URL (e.g., `https://xxxx.ngrok.io`).
-
-### 2. Update Configuration
-
-Add to your `.env`:
+## Project structure
 
 ```
-SERVER_EXTERNAL_URL=https://xxxx.ngrok.io
-```
-
-### 3. Start the Server
-
-```bash
-python main.py
-```
-
-### 4. Configure Twilio
-
-You can use the setup wizard with `--twilio-only` to handle Twilio configuration:
-
-```bash
-python setup.py --twilio-only
-```
-
-Or configure manually:
-
-1. Get a Twilio phone number at [twilio.com/console](https://www.twilio.com/console)
-2. In the phone number settings, set the webhook for incoming calls to:
-   ```
-   https://xxxx.ngrok.io/incoming-call
-   ```
-   Method: HTTP POST
-3. Call your Twilio number from any phone
-
-The server logs will show the call connecting in your terminal.
-
-## Local Development (No Twilio Required)
-
-You can test the full voice agent conversation without a phone or Twilio account using `dev_client.py`, which connects to the server over WebSocket and streams audio from your microphone.
-
-```bash
-pip install -r requirements-dev.txt  # Adds sounddevice, numpy, websockets
-
-# Terminal 1:
-python main.py
-
-# Terminal 2:
-python dev_client.py
-```
-
-Speak into your microphone to have a conversation with the agent. See [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md) for more details and troubleshooting.
-
-> **Note:** `dev_client.py` is for local development only. If you've deployed to Fly.io, call the phone number directly instead.
-
-## Example Conversation
-
-```
-Agent: "Thank you for calling Bright Smile Dental! How can I help you today?"
-
-Caller: "Hi, I'd like to schedule a cleaning."
-
-Agent: "I'd be happy to help you schedule a cleaning. Do you have a preferred
-        date or day of the week?"
-
-Caller: "How about next Tuesday?"
-
-  [Agent calls check_available_slots(date="2026-03-03")]
-
-Agent: "I have a few openings next Tuesday with Lisa Thompson, our hygienist.
-        There's a slot at 10 AM and another at 2 PM. Which would work better
-        for you?"
-
-Caller: "10 AM works."
-
-Agent: "Great, a cleaning with Lisa Thompson on Tuesday March 3rd at 10 AM.
-        Can I get your name and phone number to book that?"
-
-Caller: "Sure, it's Maria Garcia, 555-0199."
-
-Agent: "I have a cleaning with Lisa Thompson on Tuesday March 3rd at 10 AM
-        for Maria Garcia. Shall I go ahead and book that?"
-
-Caller: "Yes please."
-
-  [Agent calls book_appointment(patient_name="Maria Garcia",
-                                patient_phone="555-0199",
-                                slot_id="slot-abc123")]
-
-Agent: "You're all set! Your cleaning is booked for Tuesday March 3rd at
-        10 AM with Lisa Thompson. Is there anything else I can help with?"
-
-Caller: "No, that's all. Thanks!"
-
-Agent: "You're welcome! We'll see you on Tuesday. Have a great day!"
-
-  [Agent calls end_call(reason="appointment_booked")]
-```
-
-## Project Structure
-
-```
-telephony-voice-agent/
-├── main.py                          # Entry point, Starlette app + uvicorn
-├── config.py                        # Environment variable management
-├── setup.py                         # Setup wizard (Twilio + Fly.io)
-├── dev_client.py                    # Local dev client (mic/speaker, no Twilio needed)
-├── requirements.txt                 # Python dependencies
-├── requirements-dev.txt             # Dev-only dependencies (sounddevice, websockets)
-├── .env.example                     # Environment variable template
-├── Dockerfile                       # Container config for Fly.io deployment
-├── fly.toml                         # Fly.io app config
-│
+├── main.py                     # Starlette app, routes, uvicorn entry
+├── config.py                   # Env loading + validation
+├── setup.py                    # Setup wizard (Twilio / Fly.io)
+├── requirements.txt
+├── .env.example
 ├── telephony/
-│   └── routes.py                    # POST /incoming-call, WS /twilio
-│
+│   └── routes.py               # POST /incoming-call, WS /twilio
 ├── voice_agent/
-│   ├── session.py                   # VoiceAgentSession, Deepgram connection + audio bridge
-│   ├── agent_config.py              # Agent prompt, functions, audio/model settings
-│   └── function_handlers.py         # Routes function calls to backend service
-│
+│   ├── elevenlabs_session.py # Twilio ↔ ElevenLabs bridge
+│   ├── elevenlabs_fnol_sync.py   # PATCH agent (Klaus FNOL)
+│   ├── elevenlabs_voice_check.py # List usable voice IDs
+│   ├── session.py              # Deepgram session (legacy path)
+│   ├── agent_config.py         # Deepgram agent config (legacy / consistency)
+│   └── function_handlers.py
 ├── backend/
-│   ├── models.py                    # Data models (TimeSlot, Patient, Appointment)
-│   └── scheduling_service.py        # Mock scheduling API (in-memory)
-│
-└── docs/
-    ├── ARCHITECTURE.md              # Detailed architecture and data flows
-    ├── PROMPT_GUIDE.md              # Voice agent prompt best practices
-    ├── FUNCTION_GUIDE.md            # Function definition best practices
-    └── LOCAL_DEVELOPMENT.md         # Local dev setup guide
+│   ├── claims_service.py       # Drafts, finalize_call, /ws broadcast
+│   ├── scheduling_service.py # Mock scheduling (reference)
+│   └── models.py
+├── inca-dashboard/             # Next.js operator UI
+└── docs/                       # Architecture & prompt guides
 ```
 
-## Customization
+---
 
-### Change the Agent's Personality
+## Troubleshooting
 
-Edit the `SYSTEM_PROMPT` in `voice_agent/agent_config.py`. This is where you define who the agent is, what it knows, and how it behaves. See [docs/PROMPT_GUIDE.md](docs/PROMPT_GUIDE.md) for voice-specific prompt best practices.
+| Symptom | Likely cause |
+|---------|----------------|
+| Call connects, **no audio** | `SERVER_EXTERNAL_URL` ≠ Twilio stream host; or ElevenLabs agent not **published**; or voice ID invalid — run `elevenlabs_voice_check` + `fnol_sync`. |
+| **404** on `/incoming-call` | Wrong **`WEBHOOK_SECRET`** path; or Twilio signature URL mismatch. |
+| **405** on `GET /incoming-call` | Browser hit; Twilio uses **POST** only — ignore. |
+| **502** via ngrok | Python server down, wrong port, or crash — check server logs. |
+| Dashboard empty | No client on **`/ws`**; or `OPENAI_API_KEY` missing so extraction skips fields. |
 
-### Add or Modify Functions
+---
 
-1. Define the function in `voice_agent/agent_config.py` (in the `FUNCTIONS` list)
-2. Add the handler in `voice_agent/function_handlers.py`
-3. Implement the backend logic in `backend/scheduling_service.py`
+## Submission checklist (judges & teammates)
 
-See [docs/FUNCTION_GUIDE.md](docs/FUNCTION_GUIDE.md) for function definition best practices.
+- [ ] **Repo** public: [github.com/0xk4g3/Bigberlin-hackathon](https://github.com/0xk4g3/Bigberlin-hackathon)  
+- [ ] **Team name:** **noTime** (this README)  
+- [ ] **`.env`** created from **`.env.example`**; **no secrets in git**  
+- [ ] **Twilio** number → **POST** webhook → `/incoming-call[/<secret>]` on live HTTPS host  
+- [ ] **`python3 main.py`** running; **`python3 -m voice_agent.elevenlabs_fnol_sync`** run after prompt changes  
+- [ ] **ElevenLabs** agent **published**  
+- [ ] **Demo number** + short **script** for judges (safe / unsafe scenario)  
+- [ ] **Dashboard** running with **`/ws`** pointed at the same backend  
 
-### Swap the LLM or Voice
+---
 
-Set environment variables in `.env`:
+## Credits & license
 
-```
-LLM_MODEL=gpt-4o          # Default: gpt-4o-mini
-VOICE_MODEL=aura-2-orion-en  # Default: aura-2-thalia-en
-```
-
-### Multilingual Support
-
-This reference implementation is configured for English using Deepgram Flux (`flux-general-en`) for STT, which provides native turn-taking optimized for voice agents. For building voice agents in other languages, see the [Deepgram multilingual voice agent guide](https://developers.deepgram.com/docs/multilingual-voice-agent).
-
-### Replace the Mock Backend
-
-The `backend/` directory contains an in-memory mock. To connect to a real scheduling system:
-
-1. Keep the same method signatures in `scheduling_service.py`
-2. Replace the method bodies with HTTP calls to your real API
-3. The voice agent layer doesn't need to change
-
-The function dispatch in `voice_agent/function_handlers.py` uses lazy imports, making the boundary between voice agent and backend explicit.
-
-## Additional Resources
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Detailed architecture, data flow diagrams, and component details
-- [docs/PROMPT_GUIDE.md](docs/PROMPT_GUIDE.md) - Best practices for writing voice agent prompts
-- [docs/FUNCTION_GUIDE.md](docs/FUNCTION_GUIDE.md) - Best practices for defining agent functions
-- [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md) - Step-by-step local development setup
-- [Deepgram Voice Agent API Docs](https://developers.deepgram.com/docs/voice-agent) - Official API documentation
+- **Team noTime** — Big Berlin Hackathon submission.  
+- Project evolved from Deepgram’s inbound telephony reference; **production voice path** documented here is **Twilio + ElevenLabs + OpenAI**.  
+- See repository **LICENSE** for original license terms.
