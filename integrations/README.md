@@ -2,6 +2,8 @@
 
 This folder is **isolated** from `telephony/`, `main.py`, and `voice_agent/elevenlabs_session.py`. Inbound audio and Twilio behaviour are unchanged.
 
+**Full sponsor guide:** [docs/SPONSOR_PIONEER_ENTIRE.md](../docs/SPONSOR_PIONEER_ENTIRE.md) · Root [README.md](../README.md)
+
 ## Pioneer (Fastino)
 
 1. Get an API key from [Pioneer / Fastino](https://pioneer.ai/) (`pio_sk_…`).
