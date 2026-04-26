@@ -50,8 +50,12 @@ def _check_webhook_secret(path_params: dict) -> bool:
     token = path_params.get("token", "")
     return token == WEBHOOK_SECRET
 
-# Active sessions, keyed by call_sid.  Used for monitoring and cleanup.
+# Active sessions, keyed by call_sid.
 active_sessions: dict[str, VoiceAgentSession] = {}
+
+# Caller phone numbers captured from the POST webhook, looked up by call_sid
+# when the WebSocket stream starts (Twilio doesn't include From in the start event).
+_caller_phones: dict[str, str] = {}
 
 
 async def incoming_call(request: Request) -> Response:
@@ -70,11 +74,17 @@ async def incoming_call(request: Request) -> Response:
     if not _check_webhook_secret(request.path_params):
         return Response(status_code=404)
 
+    # Capture caller phone for later use in the WebSocket handler
+    form_data   = await request.form()
+    call_sid_in = form_data.get("CallSid", "")
+    caller_from = form_data.get("From", "unknown")
+    if call_sid_in:
+        _caller_phones[call_sid_in] = caller_from
+
     # Validate Twilio request signature (only when TWILIO_AUTH_TOKEN is set)
     if _twilio_validator:
         # Reconstruct the full URL Twilio used to reach us
         url = str(request.url)
-        form_data = await request.form()
         params = dict(form_data)
         signature = request.headers.get("X-Twilio-Signature", "")
         logger.info(f"[TELEPHONY] Signature validation - url={url} signature={signature[:20] + '...' if signature else 'MISSING'}")
@@ -148,7 +158,8 @@ async def twilio_websocket(websocket: WebSocket):
                 continue
 
         # Create and start the voice agent session.
-        session = VoiceAgentSession(websocket, call_sid, stream_sid)
+        caller_phone = _caller_phones.pop(call_sid, "unknown")
+        session = VoiceAgentSession(websocket, call_sid, stream_sid, caller_phone=caller_phone)
         active_sessions[call_sid] = session
 
         await session.start()

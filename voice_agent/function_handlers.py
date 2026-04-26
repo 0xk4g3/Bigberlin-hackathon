@@ -1,61 +1,44 @@
 """
-Function dispatch - routes agent function calls to the backend scheduling service.
+Function dispatch — routes voice agent function calls to the claims backend.
 
-Each function the agent can call (defined in agent_config.py) maps to a method
-on the scheduling service.  This module is the bridge between the voice agent
-layer and the backend layer.
-
-To swap the mock backend for a real API, you only need to change the imports
-and method calls here - the voice agent layer doesn't know or care whether
-the backend is in-memory or a remote HTTP service.
+Functions defined in agent_config.py:
+  submit_claim  → claims_service.submit_claim_draft()
+  end_call      → signals the session to hang up after goodbye audio
 """
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-async def dispatch_function(name: str, args: dict) -> dict:
-    """Dispatch a function call to the appropriate backend handler.
+async def dispatch_function(name: str, args: dict, call_sid: str = "") -> dict:
+    """Dispatch a function call from the agent to the appropriate handler.
 
     Args:
-        name: Function name (matches names in agent_config.FUNCTIONS)
-        args: Parsed arguments from the LLM
+        name:     Function name (must match names in agent_config.FUNCTIONS)
+        args:     Parsed arguments from the LLM
+        call_sid: Current call SID — needed to associate the draft with the call
 
     Returns:
-        Result dict that gets sent back to the agent as context for its next response.
+        Result dict sent back to the agent as context for its next response.
     """
-    # Lazy import - keeps the backend dependency explicit and avoids
-    # circular imports during startup.
-    from backend.scheduling_service import scheduling_service
-
-    if name == "check_available_slots":
-        return await scheduling_service.get_available_slots(
-            date=args.get("date"),
-            provider=args.get("provider"),
-        )
-
-    elif name == "book_appointment":
-        return await scheduling_service.book_appointment(
-            patient_name=args["patient_name"],
-            patient_phone=args["patient_phone"],
-            slot_id=args["slot_id"],
-        )
-
-    elif name == "check_appointment":
-        return await scheduling_service.check_appointment(
-            patient_name=args.get("patient_name"),
-            patient_phone=args.get("patient_phone"),
-        )
-
-    elif name == "cancel_appointment":
-        return await scheduling_service.cancel_appointment(
-            appointment_id=args["appointment_id"],
-        )
+    if name == "submit_claim":
+        from backend.claims_service import submit_claim_draft
+        claim_ref = await submit_claim_draft(call_sid, args)
+        logger.info(f"[CLAIMS] Claim submitted for {call_sid}: {claim_ref}")
+        return {
+            "status": "submitted",
+            "claim_ref": claim_ref,
+            "message": (
+                f"Claim {claim_ref} has been opened successfully. "
+                "The caller will receive email confirmation and an assessor "
+                "will be in touch within one business day."
+            ),
+        }
 
     elif name == "end_call":
-        reason = args.get("reason", "customer_goodbye")
-        logger.info(f"Call ending: {reason}")
-        return {"status": "call_ended", "reason": reason}
+        reason = args.get("reason", "caller_goodbye")
+        logger.info(f"[CLAIMS] end_call requested — reason: {reason}")
+        return {"status": "call_ending", "reason": reason}
 
     else:
         logger.warning(f"Unknown function: {name}")

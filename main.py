@@ -21,6 +21,7 @@ from starlette.responses import PlainTextResponse
 
 from config import SERVER_HOST, SERVER_PORT, SERVER_EXTERNAL_URL, DEEPGRAM_API_KEY
 from telephony.routes import incoming_call, twilio_websocket
+from backend.claims_service import register_ws_client
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -49,6 +50,7 @@ app = Starlette(
         Route("/incoming-call", incoming_call, methods=["POST"]),
         WebSocketRoute("/twilio/{token:path}", twilio_websocket),
         WebSocketRoute("/twilio", twilio_websocket),
+        WebSocketRoute("/ws", register_ws_client),   # dashboard live-updates
         Route("/", dashboard),
     ],
 )
