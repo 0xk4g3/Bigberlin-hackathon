@@ -23,7 +23,7 @@ export const MOCK_TICKETS: ClaimTicket[] = [
       { key: 'Repair shop',     value: null },
     ],
     messages: [
-      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Sarah. Are you safe? Is everyone okay?', timestamp: '00:00:08' },
+      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Klaus. Are you safe? Is everyone okay?', timestamp: '00:00:08' },
       { id: '2', role: 'caller', text: 'Yes I am fine. My car was hit from behind on the A100.', timestamp: '00:00:22' },
       { id: '3', role: 'agent',  text: 'I am glad you are okay. Can you tell me when this happened?', timestamp: '00:00:35' },
       { id: '4', role: 'caller', text: 'Today around 10 AM near the Tempelhof junction.', timestamp: '00:00:58' },
@@ -53,7 +53,7 @@ export const MOCK_TICKETS: ClaimTicket[] = [
       { key: 'Repair shop',     value: 'Auto Center Mitte' },
     ],
     messages: [
-      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Sarah. Are you safe?', timestamp: '00:00:05' },
+      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Klaus. Are you safe?', timestamp: '00:00:05' },
       { id: '2', role: 'caller', text: 'Yes I am fine. Someone hit my parked car and drove away.', timestamp: '00:00:18' },
       { id: '3', role: 'agent',  text: 'I am sorry to hear that. When did this happen?', timestamp: '00:00:30' },
       { id: '4', role: 'caller', text: 'Around 2:30 PM today on Unter den Linden.', timestamp: '00:00:50' },
@@ -81,7 +81,7 @@ export const MOCK_TICKETS: ClaimTicket[] = [
       { key: 'Repair shop',     value: null },
     ],
     messages: [
-      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Sarah. Are you safe?', timestamp: '00:00:06' },
+      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Klaus. Are you safe?', timestamp: '00:00:06' },
       { id: '2', role: 'caller', text: 'I think so. I hit a deer on the B96 this morning. The front is badly damaged.', timestamp: '00:00:25' },
       { id: '3', role: 'agent',  text: 'That sounds frightening. Was the police called?', timestamp: '00:00:40' },
       { id: '4', role: 'caller', text: 'Yes I have the case number: BP-2025-04-25-0112.', timestamp: '00:01:05' },

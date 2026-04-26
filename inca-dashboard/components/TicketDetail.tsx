@@ -185,7 +185,7 @@ export default function TicketDetail({ ticket, onBack }: Props) {
                     lineHeight: 1.4,
                   }}
                 >
-                  {msg.role === 'agent' ? 'Sarah' : 'Caller'}
+                  {msg.role === 'agent' ? 'Klaus' : 'Caller'}
                 </span>
                 <span
                   style={{

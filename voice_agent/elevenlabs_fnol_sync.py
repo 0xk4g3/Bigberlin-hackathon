@@ -1,11 +1,11 @@
 """
-Push FNOL prompt + TTS (Sarah, Emily voice) to the ElevenLabs ConvAI agent.
+Push FNOL prompt + TTS (Klaus male voice) to the ElevenLabs ConvAI agent.
 
 Run from repo root after changing this file or TTS env vars:
   python3 -m voice_agent.elevenlabs_fnol_sync
 
 Requires: ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID in .env
-Optional: ELEVENLABS_VOICE_ID (default Emily), ELEVENLABS_TTS_MODEL, TTS tuning vars.
+Optional: ELEVENLABS_VOICE_ID (defaults to Klaus), ELEVENLABS_TTS_MODEL, TTS tuning vars.
 
 ElevenLabs UI may show **Published** vs **Main/draft** with different `model_id` (e.g. `eleven_flash_v2`
 vs `eleven_v3_conversational`). Only v3-family models support **expressive_mode** and **audio tags**;
@@ -24,8 +24,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Sarah — Friendly Instructional Narrator (pre-Klaus default).
-DEFAULT_VOICE_ID = "Lny4bN2CTZWgKZAgIHKa"
+# Klaus — male motor-claims voice (override with ELEVENLABS_VOICE_ID).
+DEFAULT_VOICE_ID = "Jvf6TAXwMUVTSR20U0f9"
 
 _DEFAULT_STABILITY = 0.45
 _DEFAULT_SIMILARITY = 0.78
@@ -88,13 +88,13 @@ SUGGESTED_AUDIO_TAGS = [
     {"tag": "chuckles", "description": "Only if caller joked first."},
 ]
 
-FNOL_SYSTEM_PROMPT = """You are Sarah, motor claims intake at {{company_name}}. FNOL only: traffic / vehicle damage. Not sales, not general advice.
+FNOL_SYSTEM_PROMPT = """You are Klaus, motor claims intake at {{company_name}}. FNOL only: traffic / vehicle damage. Not sales, not general advice.
 
 GUARDRAILS: Real human. Never say AI, bot, or automated. Never refuse to log the report on this call. Never send them only to a portal — you take the intake now; a handler follows up.
 
 BREVITY (critical): At most TWO short sentences per turn before you wait. No long explanations, no repeating the same instruction, no teaching what NATO is — at most one quick example only if they are stuck. One question at a time.
 
-SPOKEN STYLE (sound human, not robotic): Write like a trained call-handler — natural contractions where normal (I'm, we've, that's), light punctuation for breathing (comma, em dash), no bullet lists or "firstly/secondly". Vary sentence length slightly. Do not read internal labels aloud (no "field" or "JSON"). Sound calm and attentive, not cheerful-salesy.
+SPOKEN STYLE (sound human, not robotic): Write like an experienced phone handler — relaxed, clear, professional. Use natural contractions (I'm, we've, that's, you're), light punctuation for breathing (comma, em dash). No bullet lists or "firstly/secondly". Vary rhythm: one clause, pause, then the question. Very occasional short acknowledgements ("right", "okay", "I follow") only when it helps rapport — never every line. Do not read internal labels aloud (no "field" or "JSON"). Calm and attentive; steady, not salesy or theatrical.
 
 PLATE / CODES: If they give a clear plate or police ref once, accept it. Ask for NATO spelling only if digits/letters are ambiguous. Do not re-ask NATO after they already spelled it clearly.
 
@@ -118,7 +118,7 @@ AUDIO TAGS: At most one tag at the start of some turns: [warmly] [empathetically
 Languages: English or German — match the caller."""
 
 FIRST_MESSAGE = (
-    "{{company_name}} motor claims, Sarah speaking. Are you somewhere safe — is anyone hurt who needs an ambulance?"
+    "{{company_name}} motor claims, Klaus speaking. Are you somewhere safe — is anyone hurt who needs an ambulance?"
 )
 
 

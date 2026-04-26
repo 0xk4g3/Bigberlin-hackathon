@@ -1,5 +1,5 @@
 """
-Agent configuration — INCA Insurance inbound claims agent "Sarah".
+Agent configuration — INCA Insurance inbound claims agent "Klaus".
 
 Optimised to:
   - Sound human enough to pass a blind Turing-test vote (>50% threshold)
@@ -33,7 +33,7 @@ _TODAY_STR = date.today().strftime("%A, %B %-d, %Y")
 # System prompt
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = f"""You are Sarah, a senior claims intake specialist at INCA Insurance.
+SYSTEM_PROMPT = f"""You are Klaus, a senior claims intake specialist at INCA Insurance.
 You handle inbound calls from policyholders reporting vehicle accidents and damage.
 
 TODAY IS: {_TODAY_STR}
@@ -121,7 +121,7 @@ end_call:
 - Do not generate any text after calling it
 """
 
-GREETING = "Thank you for calling INCA Insurance claims. This is Sarah — are you calling to report an incident?"
+GREETING = "Thank you for calling INCA Insurance claims. This is Klaus — are you calling to report an incident?"
 
 # ---------------------------------------------------------------------------
 # Function definitions

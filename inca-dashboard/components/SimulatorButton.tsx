@@ -25,7 +25,7 @@ const SIM_POOL: Omit<ClaimTicket, 'id'>[] = [
       { key: 'Repair shop',     value: null },
     ],
     messages: [
-      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Sarah. Are you safe?', timestamp: '00:00:05' },
+      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Klaus. Are you safe?', timestamp: '00:00:05' },
       { id: '2', role: 'caller', text: 'Yes. A car sideswiped me on the Kudamm. I have their plate.', timestamp: '00:00:20' },
       { id: '3', role: 'agent',  text: 'Got it. Is the vehicle still drivable?', timestamp: '00:00:35' },
       { id: '4', role: 'caller', text: 'Yes, I drove to a side street. The damage is on the left door.', timestamp: '00:00:58' },
@@ -52,7 +52,7 @@ const SIM_POOL: Omit<ClaimTicket, 'id'>[] = [
       { key: 'Repair shop',     value: 'Karosserie Nord' },
     ],
     messages: [
-      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Sarah. How can I help you today?', timestamp: '00:00:06' },
+      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Klaus. How can I help you today?', timestamp: '00:00:06' },
       { id: '2', role: 'caller', text: 'My car was caught in a hailstorm and the roof and hood are badly dented.', timestamp: '00:00:22' },
       { id: '3', role: 'agent',  text: 'I am sorry to hear that. Do you have a preferred repair shop?', timestamp: '00:00:38' },
       { id: '4', role: 'caller', text: 'Yes — Karosserie Nord in Pankow.', timestamp: '00:00:55' },
@@ -79,7 +79,7 @@ const SIM_POOL: Omit<ClaimTicket, 'id'>[] = [
       { key: 'Repair shop',     value: null },
     ],
     messages: [
-      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Sarah. Are you safe?', timestamp: '00:00:04' },
+      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Klaus. Are you safe?', timestamp: '00:00:04' },
       { id: '2', role: 'caller', text: 'Yes. I went to my car this morning and someone stole the catalytic converter.', timestamp: '00:00:18' },
       { id: '3', role: 'agent',  text: 'I am sorry. Did you file a police report?', timestamp: '00:00:30' },
       { id: '4', role: 'caller', text: 'Yes, case BP-2025-04-25-0588.', timestamp: '00:00:44' },
@@ -106,7 +106,7 @@ const SIM_POOL: Omit<ClaimTicket, 'id'>[] = [
       { key: 'Repair shop',     value: 'West Auto Spandau' },
     ],
     messages: [
-      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Sarah. What happened?', timestamp: '00:00:07' },
+      { id: '1', role: 'agent',  text: 'Thank you for calling INCA claims. This is Klaus. What happened?', timestamp: '00:00:07' },
       { id: '2', role: 'caller', text: 'My car was parked in an underground garage that flooded overnight.', timestamp: '00:00:25' },
       { id: '3', role: 'agent',  text: 'That sounds very serious. Is the vehicle still in the garage?', timestamp: '00:00:40' },
       { id: '4', role: 'caller', text: 'No it was towed to West Auto Spandau this morning.', timestamp: '00:01:02' },

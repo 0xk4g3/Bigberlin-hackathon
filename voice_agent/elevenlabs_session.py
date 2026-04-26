@@ -292,7 +292,7 @@ class ElevenLabsSession:
         elif msg_type == "agent_response":
             text = data.get("agent_response_event", {}).get("agent_response", "")
             if text:
-                logger.info(f"[EL:{self.call_sid}] SARAH: {text}")
+                logger.info(f"[EL:{self.call_sid}] KLAUS: {text}")
                 self._append_transcript("agent", text)
 
         elif msg_type == "user_transcript":
@@ -343,7 +343,7 @@ class ElevenLabsSession:
             return None
 
         conversation = "\n".join(
-            f"{'Sarah' if m['role'] == 'agent' else 'Caller'}: {_strip_eleven_tags(m['text'])}"
+            f"{'Klaus' if m['role'] == 'agent' else 'Caller'}: {_strip_eleven_tags(m['text'])}"
             for m in self._transcript
         )
 
