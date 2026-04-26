@@ -25,7 +25,7 @@
 11. [Optional paths](#optional-paths)
 12. [Project structure](#project-structure)
 13. [Troubleshooting](#troubleshooting)
-14. [Submission checklist](#submission-checklist)
+14. [Sponsor tracks: Pioneer & Entire](#sponsor-tracks-pioneer--entire)
 
 ---
 
@@ -252,6 +252,7 @@ On each completed call, the server broadcasts a **`call_ended`** message with tr
 │   ├── claims_service.py       # Drafts, finalize_call, /ws broadcast
 │   ├── scheduling_service.py # Mock scheduling (reference)
 │   └── models.py
+├── integrations/               # Pioneer + offline risk demo (not imported by main.py)
 ├── inca-dashboard/             # Next.js operator UI
 └── docs/                       # Architecture & prompt guides
 ```
@@ -270,16 +271,38 @@ On each completed call, the server broadcasts a **`call_ended`** message with tr
 
 ---
 
-## Submission checklist (judges & teammates)
+## Sponsor tracks: Pioneer & Entire
 
-- [ ] **Repo** public: [github.com/0xk4g3/Bigberlin-hackathon](https://github.com/0xk4g3/Bigberlin-hackathon)  
-- [ ] **Team name:** **noTime** (this README)  
-- [ ] **`.env`** created from **`.env.example`**; **no secrets in git**  
-- [ ] **Twilio** number → **POST** webhook → `/incoming-call[/<secret>]` on live HTTPS host  
-- [ ] **`python3 main.py`** running; **`python3 -m voice_agent.elevenlabs_fnol_sync`** run after prompt changes  
-- [ ] **ElevenLabs** agent **published**  
-- [ ] **Demo number** + short **script** for judges (safe / unsafe scenario)  
-- [ ] **Dashboard** running with **`/ws`** pointed at the same backend  
+These integrations are **submission and research layers only**. They do **not** import into `main.py`, `telephony/`, or `voice_agent/elevenlabs_session.py` — inbound calls, Twilio, and ElevenLabs behaviour are unchanged.
+
+### [Fastino](https://fastino.ai/) — Best use of [Pioneer](https://pioneer.ai/)
+
+**We use Pioneer in this repository** as follows:
+
+| Requirement (challenge) | How we satisfy it |
+|---------------------------|-------------------|
+| Use Pioneer in the project | Optional **`POST https://api.pioneer.ai/inference`** from `integrations/pioneer_risk.py` with **`task: "extract_entities"`** and a **GLiNER2-class encoder** (`fastino/gliner2-base-v1` by default, overridable via `PIONEER_MODEL_ID`). |
+| Fine-tune / replace general LLM calls | Live calls still use **ElevenLabs + Gemini** for conversation; **OpenAI** remains the primary **post-call JSON extraction**. Pioneer adds a **second, specialised encoder pass** on the same structured FNOL narrative — complementary, not a swap of the voice pipeline. |
+| Synthetic data, evaluation, adaptive inference | Narrative for Pioneer is built from **synthetic or real claim dicts**; scores and factors can be compared to frontier extraction offline. `python3 -m integrations` supports stdin JSON for repeatable eval runs. |
+| Creative **GLiNER2** use | Entity schema tuned for **motor FNOL** (`vehicle_plate`, `location`, `injury`, `weather`, etc.) on free-text summaries — not generic NER demos. |
+
+**Confirm for judges:** Pioneer is invoked only when **`PIONEER_API_KEY`** is set; without it, the same module still runs a **transparent local risk heuristic** (no network) so demos work offline. See **`integrations/README.md`** and run:
+
+```bash
+python3 -m integrations
+```
+
+Design intent matches the broader **ClaimAI** brief (predictive / preventive intelligence on top of intake) without coupling that experiment to production telephony.
+
+### [Entire](https://entire.io/?utm_source=luma) — Best use of Entire
+
+**We use Entire** for **provenance and session transparency**: connect this GitHub repository in the Entire dashboard (install the [Entire CLI](https://github.com/entireio/cli), run `entire enable` in the repo per [Entire docs](https://docs.entire.io/)).
+
+**Repositories overview (submission link — replace after you connect your fork/org):**
+
+**[Entire overview → `0xk4g3/Bigberlin-hackathon`](https://entire.io/gh/0xk4g3/Bigberlin-hackathon/overview)**  
+
+If your Entire URL differs after linking GitHub, update this README in your fork to the exact **overview** page Entire shows for *this* repo.
 
 ---
 
