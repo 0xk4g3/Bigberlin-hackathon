@@ -254,7 +254,7 @@ On each completed call, the server broadcasts a **`call_ended`** message with tr
 │   └── models.py
 ├── integrations/               # Pioneer + offline risk demo (not imported by main.py)
 ├── inca-dashboard/             # Next.js operator UI
-└── docs/                       # Architecture & prompt guides
+└── docs/                       # CLAIMAI.pdf + architecture & prompt guides
 ```
 
 ---
@@ -274,6 +274,8 @@ On each completed call, the server broadcasts a **`call_ended`** message with tr
 ## Sponsor tracks: Pioneer & Entire
 
 These integrations are **submission and research layers only**. They do **not** import into `main.py`, `telephony/`, or `voice_agent/elevenlabs_session.py` — inbound calls, Twilio, and ElevenLabs behaviour are unchanged.
+
+**Product brief (ClaimAI):** [docs/CLAIMAI.pdf](docs/CLAIMAI.pdf) — FNOL voice agent + predictive / explainability layers that informed the Pioneer risk pass and Entire provenance story.
 
 ### [Fastino](https://fastino.ai/) — Best use of [Pioneer](https://pioneer.ai/)
 
